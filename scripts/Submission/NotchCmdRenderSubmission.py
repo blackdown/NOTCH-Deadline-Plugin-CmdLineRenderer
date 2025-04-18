@@ -32,6 +32,9 @@ IMAGE_CODECS = {"exr", "png", "jpg", "tga", "tiff"}
 user_documents = os.path.join(os.path.expanduser("~"), "Documents")
 default_log_path = os.path.join(user_documents, "NotchRenderLog.txt")
 
+# Add this constant for log file format validation
+ALLOWED_LOG_EXTENSIONS = [".txt", ".log"]
+
 def get_temp_directory():
     """Returns a temporary directory path for job files"""
     temp_dir = os.environ.get('TEMP') or os.environ.get('TMP') or os.path.join(os.path.expanduser("~"), "NotchTemp")
@@ -270,13 +273,61 @@ def validate_paths():
     return True
 
 def validate_log_path():
-    log = dialog.GetValue("LogBox")
-    if log and not is_safe_path(log):
-        error_msg = "Invalid log file path"
+    log_folder = dialog.GetValue("LogFolderBox")
+    log_filename = dialog.GetValue("LogFileNameBox").strip()
+    
+    if not log_folder or not log_filename:
+        # Log is optional, so empty values are fine
+        return True
+    
+    # Validate folder path
+    if not is_safe_path(log_folder):
+        error_msg = f"Invalid log folder path: {log_folder}"
+        dialog.ShowMessageBox(error_msg, "Log Folder Error", ("Ok",))
+        print(f"ERROR: Log Folder Error: {error_msg}")
+        return False
+    
+    # Validate filename format
+    log_ext = os.path.splitext(log_filename)[1].lower()
+    if not log_ext:
+        # Add default extension if none provided
+        log_filename += ".txt"
+    elif log_ext not in ALLOWED_LOG_EXTENSIONS:
+        error_msg = (
+            f"Invalid log file extension: {log_ext}\n\n"
+            f"Allowed extensions: {', '.join(ALLOWED_LOG_EXTENSIONS)}"
+        )
         dialog.ShowMessageBox(error_msg, "Log File Error", ("Ok",))
         print(f"ERROR: Log File Error: {error_msg}")
         return False
+    
+    # Check for unsafe characters in filename
+    sanitized_filename = sanitize_filename(log_filename)
+    if sanitized_filename != log_filename:
+        info_msg = (
+            f"The log filename has been sanitized:\n\n"
+            f"Original: {log_filename}\n"
+            f"Sanitized: {sanitized_filename}"
+        )
+        dialog.ShowMessageBox(info_msg, "Log Filename Modified", ("Ok",))
+        print(f"INFO: Log Filename Modified: {info_msg}")
+        dialog.SetValue("LogFileNameBox", sanitized_filename)
+    
     return True
+
+def get_full_log_path():
+    """Combine log folder and filename to get full log path"""
+    log_folder = dialog.GetValue("LogFolderBox")
+    log_filename = dialog.GetValue("LogFileNameBox").strip()
+    
+    if not log_folder or not log_filename:
+        return ""
+    
+    # Ensure filename has an extension
+    if not os.path.splitext(log_filename)[1]:
+        log_filename += ".txt"
+    
+    return os.path.join(log_folder, sanitize_filename(log_filename))
 
 def validate_codec():
     try:
@@ -522,7 +573,7 @@ def on_submit(*args):
             
         job_name = dialog.GetValue("JobNameBox")
         refines = dialog.GetValue("RefinesBox")
-        log = dialog.GetValue("LogBox")
+        log = get_full_log_path()  # Use the new function
         layer = dialog.GetValue("LayerBox")
         fps = dialog.GetValue("FPSBox")
         width = dialog.GetValue("WidthBox")
@@ -645,9 +696,12 @@ def __main__():
         dialog.AddControlToGrid("LayerLabel", "LabelControl", "Layer:", 9, 0)
         dialog.AddControlToGrid("LayerBox", "TextControl", "", 9, 1)
 
-        # Log File - changed to FileBrowserControl
-        dialog.AddControlToGrid("LogLabel", "LabelControl", "Log File:", 10, 0)
-        dialog.AddControlToGrid("LogBox", "FileBrowserControl", default_log_path, 10, 1)
+        # Log File - replaced with folder and name controls
+        dialog.AddControlToGrid("LogFolderLabel", "LabelControl", "Log Folder:", 10, 0)
+        dialog.AddControlToGrid("LogFolderBox", "FolderBrowserControl", os.path.dirname(default_log_path), 10, 1)
+
+        dialog.AddControlToGrid("LogFileNameLabel", "LabelControl", "Log Filename:", 11, 0)
+        dialog.AddControlToGrid("LogFileNameBox", "TextControl", "NotchRenderLog.txt", 11, 1)
 
         dialog.EndGrid()
 
