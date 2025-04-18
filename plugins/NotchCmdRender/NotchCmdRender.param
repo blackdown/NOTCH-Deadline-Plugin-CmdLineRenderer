@@ -1,0 +1,38 @@
+[About]
+Type=label
+Label=About
+Category=About Plugin
+CategoryOrder=-1
+Index=0
+Default=NURA Command Line Renderer for Notch 1.0
+Description=Not configurable
+
+[ConcurrentTasks]
+Type=label
+Label=ConcurrentTasks
+Category=About Plugin
+CategoryOrder=-1
+Index=0
+Default=True
+Description=Not configurable
+
+# Path to the command-line render executable (notchcmdlinerender.exe)
+[RenderExecutable]
+Type=filename
+Label=Render Executable Path
+Category=Advanced
+CategoryOrder=1
+CategoryIndex=1
+Index=1
+Default=C:\Program Files\Notch 1.0\notchcmdlinerender.exe
+Description=The path to the executable file used for rendering.
+
+[TempDir]
+Label=Temporary Directory
+Type=Folder
+Required=false
+Category=Advanced
+CategoryOrder=1
+CategoryIndex=2
+Index=1
+Description=Optional custom temporary directory for intermediate files.
