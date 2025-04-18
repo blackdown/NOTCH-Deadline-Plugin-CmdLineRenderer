@@ -1,6 +1,8 @@
-from Deadline.Scripting import ClientUtils
-from DeadlineUI.Controls.Scripting.DeadlineScriptDialog import DeadlineScriptDialog
-from Deadline.Scripting import RepositoryUtils
+from System import *
+from System.IO import *
+from Deadline.Scripting import *
+from Deadline.Plugins import *
+from DeadlineUI.Controls.Scripting.DeadlineScriptDialog import *
 
 import os
 import re
@@ -29,6 +31,26 @@ IMAGE_CODECS = {"exr", "png", "jpg", "tga", "tiff"}
 user_documents = os.path.join(os.path.expanduser("~"), "Documents")
 default_log_path = os.path.join(user_documents, "NotchRenderLog.txt")
 
+def get_temp_directory():
+    """Returns a temporary directory path for job files"""
+    temp_dir = os.environ.get('TEMP') or os.environ.get('TMP') or os.path.join(os.path.expanduser("~"), "NotchTemp")
+    try:
+        os.makedirs(temp_dir, exist_ok=True)
+        test_file = os.path.join(temp_dir, "write_test")
+        with open(test_file, 'w') as f:
+            f.write("test")
+        os.remove(test_file)
+    except (OSError, IOError) as e:
+        print(f"⚠️ Error accessing temp directory: {e}")
+        fallback_dir = os.getcwd()
+        print(f"⚠️ Using fallback directory: {fallback_dir}")
+        return fallback_dir
+    except Exception as e:
+        print(f"⚠️ Unexpected error while creating temp directory: {type(e).__name__}: {e}")
+        fallback_dir = os.getcwd()
+        print(f"⚠️ Using fallback directory: {fallback_dir}")
+        return fallback_dir
+    return temp_dir
 
 def normalize_windows_path(path):
     """Normalizes Windows paths to use correct separators"""
@@ -44,7 +66,8 @@ def is_file_locked(file_path):
         with open(file_path, 'a') as f:
             pass
         return False
-    except IOError:
+    except IOError as e:
+        print(f"⚠️ IOError detected while checking file lock: {e}")
         return True
 
 def check_windows_environment():
@@ -60,13 +83,14 @@ def check_windows_environment():
             os.environ.get('SystemRoot')
         ]
         
-        for dir in required_dirs:
-            if not dir or not os.path.exists(dir):
+        for required_directory in required_dirs:
+            if not required_directory or not os.path.exists(required_directory):
                 return False
                 
         return True
         
-    except Exception:
+    except (KeyError, FileNotFoundError, OSError) as e:  # Handle specific exceptions
+        print(f"⚠️ Error checking Windows environment: {e}")
         return False
 
 def is_safe_path(path):
@@ -75,7 +99,7 @@ def is_safe_path(path):
     """
     try:
         # Convert to absolute path and normalize for Windows
-        abs_path = os.path.abspath(normalize_windows_path(path))
+        absolute_path = os.path.abspath(normalize_windows_path(path))
         
         # Check for suspicious characters
         unsafe_chars = ['<', '>', '|', '*', '?', '"', ';', '&', '$']
@@ -89,27 +113,33 @@ def is_safe_path(path):
             return False
             
         # Validate path length (Windows MAX_PATH is 260)
-        if len(abs_path) > 260:
-            print(f"⚠️ Path exceeds maximum length: {len(abs_path)} characters")
+        if len(absolute_path) > 260:
+            print(f"⚠️ Path exceeds maximum length: {len(absolute_path)} characters")
             return False
             
         return True
         
+    except OSError as e:
+        print(f"⚠️ Path validation error (OS-related): {e}")
+        return False
     except Exception as e:
-        print(f"⚠️ Path validation error: {e}")
+        print(f"⚠️ Unexpected path validation error: {e}")
         return False
 
-def validate_resolution(width, height):
+def validate_resolution():
     """
-    Validates render resolution.
+    Validates resolution from dialog values.
+    Returns True if valid, False otherwise.
     """
+    width = dialog.GetValue("WidthBox")
+    height = dialog.GetValue("HeightBox")
     try:
         w, h = int(width), int(height)
         if w <= 0 or h <= 0 or w > 16384 or h > 16384:  # Example max resolution
             print(f"⚠️ Invalid resolution: {w}x{h}")
             return False
         return True
-    except ValueError:
+    except (ValueError, TypeError):
         print("⚠️ Resolution must be numeric")
         return False
 
@@ -130,10 +160,10 @@ def sanitize_filename(filename):
     sanitized = unsafe_chars.sub('_', filename)
     
     # Ensure filename isn't too long
-    max_length = 255
+    MAX_FILENAME_LENGTH = 255  # Maximum filename length for most filesystems
     name, ext = os.path.splitext(sanitized)
-    if len(sanitized) > max_length:
-        sanitized = name[:max_length-len(ext)] + ext
+    if len(sanitized) > MAX_FILENAME_LENGTH:
+        sanitized = name[:MAX_FILENAME_LENGTH-len(ext)] + ext
         
     return sanitized
 
@@ -149,23 +179,35 @@ def cleanup_temp_files(job_info_filename, plugin_info_filename):
     for file_path, file_type in files_to_cleanup:
         try:
             if os.path.exists(file_path):
-                if is_file_locked(file_path):
-                    print(f"⚠️ File is locked, retrying: {file_path}")
-                    time.sleep(1)  # Wait for file to be released
-                os.remove(file_path)
-                print(f"✅ Cleaned up {file_type} file: {file_path}")
+                max_attempts = 5
+                for attempt in range(max_attempts):
+                    if is_file_locked(file_path):
+                        print(f"⚠️ File is locked, retrying: {file_path} (Attempt {attempt + 1}/{max_attempts})")
+                        time.sleep(1)  # Wait for file to be released
+                    else:
+                        try:
+                            os.remove(file_path)
+                            print(f"✅ Cleaned up {file_type} file: {file_path}")
+                            break
+                        except PermissionError:
+                            if attempt == max_attempts - 1:
+                                print(f"❌ Failed to remove {file_type} file after {max_attempts} attempts: {file_path}")
+                                cleanup_success = False
+                else:
+                    print(f"❌ File remained locked after {max_attempts} attempts: {file_path}")
+                    cleanup_success = False
             else:
                 print(f"ℹ️ {file_type} file not found: {file_path}")
-                
         except Exception as e:
+            print(f"❌ Error while cleaning up {file_type} file: {e}")
             cleanup_success = False
-            print(f"⚠️ Error cleaning up {file_type} file {file_path}: {e}")
     
     return cleanup_success
 
 # Define default log path
 user_documents = os.path.join(os.path.expanduser("~"), "Documents")
 default_log_path = os.path.join(user_documents, "NotchRenderLog.txt")
+
 def on_codec_changed(*args):
     try:
         selected_codec = dialog.GetValue("CodecBox").lower()
@@ -175,202 +217,184 @@ def on_codec_changed(*args):
     except Exception as e:
         print(f"⚠️ Error in codec change handler: {e}")
 
-def on_submit(*args):
+def validate_input():
+    # Perform all validations and store results
+    scene_valid = validate_scene_file()
+    paths_valid = validate_paths()
+    resolution_valid = validate_resolution()  # Using the updated function
+    log_valid = validate_log_path()
+    codec_valid = validate_codec()
+
+    # Return True only if all validations pass
+    return all([scene_valid, paths_valid, resolution_valid, log_valid, codec_valid])
+
+def validate_scene_file():
+    scene = dialog.GetValue("SceneFileBox")
+    if not validate_file_extension(scene, ALLOWED_SCENE_EXTENSIONS):
+        log_message("Validation Error", "⚠️ Invalid scene file type - must be a .notch file")
+        return False
+    return True
+
+def validate_paths():
+    scene = dialog.GetValue("SceneFileBox")
+    output_folder = dialog.GetValue("OutputFolderBox")
+    if not is_safe_path(scene) or not is_safe_path(output_folder):
+        log_message("Validation Error", "⚠️ Invalid file path")
+        return False
+    return True
+
+def validate_log_path():
+    log = dialog.GetValue("LogBox")
+    if log and not is_safe_path(log):
+        log_message("Validation Error", "⚠️ Invalid log file path")
+        return False
+    return True
+
+def validate_codec():
     try:
-        # Log the start of the submission process
+        codec = dialog.GetValue("CodecBox")
+        if not isinstance(codec, str):
+            log_message("Type Error", f"⚠️ Codec must be a string, got {type(codec)}")
+            return False
+        if codec is None or not codec.strip():
+            log_message("Validation Error", "⚠️ No codec selected or empty value")
+            return False
+        if codec.lower() not in ALLOWED_OUTPUT_EXTENSIONS:
+            log_message("Validation Error", f"⚠️ Invalid codec: {codec}. Allowed codecs: {', '.join(ALLOWED_OUTPUT_EXTENSIONS.keys())}")
+            return False
+        return True
+    except Exception as e:
+        # Potential causes: dialog.GetValue("CodecBox") might return None or an unexpected type
+        log_message("Validation Error", f"⚠️ Error validating codec: {str(e)}")
+        return False
+
+def prepare_output():
+    output_folder = dialog.GetValue("OutputFolderBox")
+    output_name = dialog.GetValue("OutputNameBox").strip()
+    codec = dialog.GetValue("CodecBox")
+
+    try:
+        os.makedirs(output_folder, exist_ok=True)
+    except Exception as e:
+        log_message("Error", f"⚠️ Failed to create output folder: {e}")
+        return None
+
+    sanitized_output_name = sanitize_filename(output_name)
+    if sanitized_output_name != output_name:
+        print(f"ℹ️ Output filename sanitized: {output_name} → {sanitized_output_name}")
+        output_name = sanitized_output_name
+
+    output_ext = os.path.splitext(output_name)[1].lower()
+    if not output_ext:
+        output_name += ALLOWED_OUTPUT_EXTENSIONS[codec][0]
+    elif output_ext not in ALLOWED_OUTPUT_EXTENSIONS[codec]:
+        log_message("Validation Error", f"⚠️ Invalid extension for codec {codec}: {output_ext}")
+        return None
+
+    return os.path.join(output_folder, output_name)
+
+def write_job_info(job_info_filename, job_name, frame_range, chunk_size):
+    try:
+        with open(job_info_filename, 'w', encoding='utf-8') as job_file:
+            job_file.write(f"Plugin=NotchCmdRender\n")
+            job_file.write(f"Name={job_name}\n")
+            job_file.write(f"Frames={frame_range}\n")
+            job_file.write(f"ChunkSize={chunk_size}\n")
+    except IOError as e:
+        log_message("File Error", f"⚠️ Failed to write job info file: {e}")
+        return False
+    except Exception as e:
+        log_message("Unexpected Error", f"⚠️ Failed to create job: {e}")
+        return False
+    return True
+
+def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, fps, temp_dir):
+    try:
+        with open(plugin_info_filename, 'w', encoding='utf-8') as plugin_file:
+            plugin_file.write(f"SceneFile={scene}\n")
+            plugin_file.write(f"OutputPath={output_full_path}\n")
+            plugin_file.write(f"IndividualFrames={individual_frames}\n")
+            plugin_file.write(f"Codec={codec}\n")
+            plugin_file.write(f"BitRate={bitrate}\n")
+            plugin_file.write(f"Quality={quality}\n")
+            plugin_file.write(f"ResX={width}\n")
+            plugin_file.write(f"ResY={height}\n")
+            plugin_file.write(f"StartFrame={start_frame}\n")
+            plugin_file.write(f"EndFrame={end_frame}\n")
+            plugin_file.write(f"Refines={refines}\n")
+            plugin_file.write(f"LogFile={log}\n")
+            plugin_file.write(f"Layer={layer}\n")
+            plugin_file.write(f"FPS={fps}\n")
+            plugin_file.write(f"OutputFile={output_full_path}\n")
+            plugin_file.write(f"TempDirectory={temp_dir}\n")
+    except IOError as e:
+        log_message("File Error", f"⚠️ Failed to write plugin info file: {e}")
+        return False
+    except Exception as e:
+        log_message("Unexpected Error", f"⚠️ Failed to create plugin info: {e}")
+        return False
+    return True
+
+def on_submit(*args):
+    job_info_filename = None
+    plugin_info_filename = None
+
+    try:
         print("✅ Submission started...")
 
-        # Get values from dialog
+        if not validate_input():
+            return
+
+        output_full_path = prepare_output()
+        if not output_full_path:
+            return
+
         scene = dialog.GetValue("SceneFileBox")
-        output_folder = dialog.GetValue("OutputFolderBox")
-        output_name = dialog.GetValue("OutputNameBox").strip()
-        width = dialog.GetValue("WidthBox")
-        height = dialog.GetValue("HeightBox")
         individual_frames = dialog.GetValue("IndividualFramesBox")
-        start_frame = int(dialog.GetValue("StartFrameBox"))
-        end_frame = int(dialog.GetValue("EndFrameBox"))
-        quality = dialog.GetValue("QualityBox")     
-        bitrate = dialog.GetValue("BitrateBox")           
+        
+        try:
+            start_frame = int(dialog.GetValue("StartFrameBox"))
+            end_frame = int(dialog.GetValue("EndFrameBox"))
+            if start_frame > end_frame:
+                log_message("Validation Error", "Start frame must be less than or equal to end frame")
+                return
+        except ValueError:
+            log_message("Validation Error", "Frame values must be valid integers")
+            return
+            
+        quality = dialog.GetValue("QualityBox").strip()
+        bitrate = dialog.GetValue("BitrateBox").strip()
+        # Quality and bitrate are now optional, no validation needed
+            
         job_name = dialog.GetValue("JobNameBox")
         refines = dialog.GetValue("RefinesBox")
         log = dialog.GetValue("LogBox")
         layer = dialog.GetValue("LayerBox")
         fps = dialog.GetValue("FPSBox")
-        
-        # In your on_submit function, replace:
-        allowed_scene_extensions = ['.dfx']  # Allowed Notch file extension
-
-        # With:
-        if not validate_file_extension(scene, ALLOWED_SCENE_EXTENSIONS):
-            log_message("Validation Error", "⚠️ Invalid scene file type - must be a .notch file")
-            return
-
-        # And update the codec validation section:
-        if codec not in ALLOWED_OUTPUT_EXTENSIONS:
-            log_message("Validation Error", f"⚠️ Invalid codec: {codec}")
-            return
-
-        # Ensure output extension matches codec
-        output_ext = os.path.splitext(output_name)[1].lower()
-        if not output_ext:
-            output_name += ALLOWED_OUTPUT_EXTENSIONS[codec][0]  # Use first allowed extension
-        elif output_ext not in ALLOWED_OUTPUT_EXTENSIONS[codec]:
-            log_message("Validation Error", f"⚠️ Invalid extension for codec {codec}: {output_ext}")
-            return
-
-        # Validate scene file
-        if not is_safe_path(scene):
-            log_message("Validation Error", "⚠️ Invalid scene file path")
-            return
-            
-        allowed_scene_extensions = ['.dfx']  # Add your allowed extensions
-        if not validate_file_extension(scene, allowed_scene_extensions):
-            log_message("Validation Error", "⚠️ Invalid scene file type")
-            return
-            
-        # Validate output folder
-        if not is_safe_path(output_folder):
-            log_message("Validation Error", "⚠️ Invalid output folder path")
-            return
-            
-        # Create output folder if it doesn't exist
-        try:
-            os.makedirs(output_folder, exist_ok=True)
-        except Exception as e:
-            log_message("Error", f"⚠️ Failed to create output folder: {e}")
-            return
-
-        # Add resolution validation
-        if not validate_resolution(width, height):
-            log_message("Validation Error", f"⚠️ Invalid resolution values: {width}x{height}")
-            return
-
-        # Add log file validation
-        if log and not is_safe_path(log):
-            log_message("Validation Error", "⚠️ Invalid log file path")
-            return
-
-        # Create log directory if it doesn't exist
-        log_dir = os.path.dirname(log)
-        try:
-            if log_dir:
-                os.makedirs(log_dir, exist_ok=True)
-        except Exception as e:
-            log_message("Error", f"⚠️ Failed to create log directory: {e}")
-            return
-
-        # Sanitize output filename
-        sanitized_output_name = sanitize_filename(output_name)
-        if sanitized_output_name != output_name:
-            print(f"ℹ️ Output filename sanitized: {output_name} → {sanitized_output_name}")
-            output_name = sanitized_output_name
-
-        # Validate codec and file extension
+        width = dialog.GetValue("WidthBox")
+        height = dialog.GetValue("HeightBox")
         codec = dialog.GetValue("CodecBox")
-        allowed_codecs = {
-            "notchlc": [".mov"],
-            "h264": [".mp4"],
-            "h265": [".mp4"],
-            "hap": [".mov"],
-            "mov": [".mov"],
-            "exr": [".exr"],
-            "png": [".png"],
-            "jpg": [".jpg"],
-            "tga": [".tga"],
-            "tiff": [".tif"]
-        }
-        
-        if codec not in allowed_codecs:
-            log_message("Validation Error", f"Invalid codec: {codec}")
-            return
 
-        # Ensure output extension matches codec
-        output_ext = os.path.splitext(output_name)[1].lower()
-        if not output_ext:
-            output_name += allowed_codecs[codec][0]  # Use first allowed extension
-        elif output_ext not in allowed_codecs[codec]:
-            log_message("Validation Error", f"Invalid extension for codec {codec}: {output_ext}")
-            return
-
-        # Rebuild full path
-        output_full_path = os.path.join(output_folder, output_name)
-
-        # Frame settings
         frame_range = f"{start_frame}-{end_frame}"
         chunk_size = 1 if individual_frames else end_frame - start_frame + 1
 
-        # Get temp directory
-        param_file_path = RepositoryUtils.GetRepositoryFilePath("custom/plugins/NotchCmdRender/NotchCmdRender.param", True)
-        custom_temp_dir = ""
-
-        try:
-            with open(param_file_path, "r") as f:
-                for line in f:
-                    if line.strip().startswith("TempDir="):
-                        _, val = line.split("=", 1)
-                        custom_temp_dir = val.strip()
-                        break
-        except Exception as e:
-            print(f"⚠️ Could not read TempDir from param file: {e}")
-
-        if custom_temp_dir and os.path.isdir(custom_temp_dir):
-            temp_dir = custom_temp_dir
-            print(f"📂 Using custom TempDir: {temp_dir}")
-        else:
-            temp_dir = ClientUtils.GetDeadlineTempPath()
-            print(f"📁 Using default Deadline temp path: {temp_dir}")
+        temp_dir = get_temp_directory()
 
         job_info_filename = os.path.join(temp_dir, "notch_job_info.job")
         plugin_info_filename = os.path.join(temp_dir, "notch_plugin_info.job")
 
-        # Write to job info file
-        try:
-            with open(job_info_filename, 'w', encoding='utf-8') as job_file:
-                job_file.write(f"Plugin=NotchCmdRender\n")
-                job_file.write(f"Name={job_name}\n")
-                job_file.write(f"Frames={frame_range}\n")
-                job_file.write(f"ChunkSize={chunk_size}\n")
-        except IOError as e:
-            log_message("File Error", f"⚠️ Failed to write job info file: {e}")
-            return
-        except Exception as e:
-            log_message("Unexpected Error", f"⚠️ Failed to create job: {e}")
-            return
-
-        # Write to plugin info file
-        try:
-            with open(plugin_info_filename, 'w', encoding='utf-8') as plugin_file:
-                plugin_file.write(f"SceneFile={scene}\n")
-                plugin_file.write(f"OutputPath={output_full_path}\n")
-                plugin_file.write(f"IndividualFrames={individual_frames}\n")
-                plugin_file.write(f"Codec={codec}\n")
-                plugin_file.write(f"BitRate={bitrate}\n")
-                plugin_file.write(f"Quality={quality}\n")
-                plugin_file.write(f"ResX={width}\n")
-                plugin_file.write(f"ResY={height}\n")
-                plugin_file.write(f"StartFrame={start_frame}\n")
-                plugin_file.write(f"EndFrame={end_frame}\n")
-                plugin_file.write(f"Refines={refines}\n")
-                plugin_file.write(f"LogFile={log}\n")
-                plugin_file.write(f"Layer={layer}\n")
-                plugin_file.write(f"FPS={fps}\n")
-                plugin_file.write(f"OutputFile={output_full_path}\n")
-                plugin_file.write(f"TempDirectory={temp_dir}\n")
-        except IOError as e:
-            log_message("File Error", f"⚠️ Failed to write plugin info file: {e}")
-            cleanup_temp_files(job_info_filename, plugin_info_filename)
-            return
-        except Exception as e:
-            log_message("Unexpected Error", f"⚠️ Failed to create plugin info: {e}")
+        if not write_job_info(job_info_filename, job_name, frame_range, chunk_size):
             cleanup_temp_files(job_info_filename, plugin_info_filename)
             return
 
-        # Submit job to Deadline
+        if not write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, fps, temp_dir):
+            cleanup_temp_files(job_info_filename, plugin_info_filename)
+            return
+
         arguments = [job_info_filename, plugin_info_filename]
         results = ClientUtils.ExecuteCommandAndGetOutput(arguments)
         print(f"Submission Results: {results}")
 
-        # Cleanup temporary files
         cleanup_success = cleanup_temp_files(job_info_filename, plugin_info_filename)
         if not cleanup_success:
             print("⚠️ Some temporary files could not be cleaned up")
@@ -379,7 +403,6 @@ def on_submit(*args):
 
     except Exception as e:
         log_message("Submission Error", f"❌ Unexpected Error:\n{e}")
-        # Try to cleanup even if submission failed
         cleanup_temp_files(job_info_filename, plugin_info_filename)
 
 def on_cancel(*args):
