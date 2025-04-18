@@ -623,7 +623,7 @@ def __main__():
         # Initialize the dialog
         global dialog
         dialog = DeadlineScriptDialog()
-        dialog.SetTitle("Notch NURA Job Submission")
+        dialog.SetTitle("Notch NURA Render")
         dialog.AddGrid()
 
         # Job Name and Pool Selection on same row
