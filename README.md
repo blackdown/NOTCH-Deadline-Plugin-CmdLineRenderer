@@ -46,17 +46,18 @@ A Deadline submission plugin for rendering Notch (.dfx) files using the Notch Co
 ## Installation
 
 1. Copy the plugin files to your Deadline Repository:
-
-    custom/
-    ├─ plugins/
-    │  └─ NotchCmdRender/
-    │     ├─ NotchCmdRender.ico
-    │     ├─ NotchCmdRender.param
-    │     └─ NotchCmdRender.py
-    └─ scripts/
-       └─ Submission/
-           ├─ icon.png
-           └─ NotchCmdRenderSubmission.py
+```
+  custom/
+  ├─ plugins/
+  │  └─ NotchCmdRender/
+  │     ├─ NotchCmdRender.ico
+  │     ├─ NotchCmdRender.param
+  │     └─ NotchCmdRender.py
+  └─ scripts/
+     └─ Submission/
+      ├─ icon.png
+      └─ NotchCmdRenderSubmission.py
+```
 
 2. Ensure the Notch Command Line Renderer is installed in the default location or update the path in `NotchCmdRender.param`
 
