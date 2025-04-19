@@ -328,6 +328,17 @@ class NotchCmdRenderPlugin(DeadlinePlugin):
                 base, ext = os.path.splitext(output)
                 output = f"{base}_{frame:04d}{ext}"
 
+            # Detect still image formats by file extension
+            _, ext = os.path.splitext(output.lower())
+            still_image_exts = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp', '.exr', '.tga']
+            is_still_image = ext in still_image_exts
+            
+            # Adjust endFrame for still images when start and end are the same
+            if is_still_image and start == end:
+                self.LogInfoWithProgress(f"Still image format detected: {ext}")
+                end = start + 1
+                self.LogInfoWithProgress(f"Adjusted frame range for still image output: {start} to {end}")
+
             # Add required parameters first
             args.extend([
                 "-document", quote(scene),

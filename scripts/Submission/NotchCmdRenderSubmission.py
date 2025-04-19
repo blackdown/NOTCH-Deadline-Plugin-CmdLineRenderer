@@ -21,12 +21,12 @@ ALLOWED_OUTPUT_EXTENSIONS = {
     "mov": [".mov"],
     "exr": [".exr"],
     "png": [".png"],
-    "jpg": [".jpg", ".jpeg"],
+    "jpeg": [".jpg", ".jpeg"],
     "tga": [".tga"],
     "tiff": [".tif", ".tiff"]
 }
 
-IMAGE_CODECS = {"exr", "png", "jpg", "tga", "tiff"}
+IMAGE_CODECS = {"exr", "png", "jpeg", "tga", "tiff"}
 
 # Default paths
 user_documents = os.path.join(os.path.expanduser("~"), "Documents")
@@ -661,7 +661,7 @@ def __main__():
         # Codec selection
         dialog.AddControlToGrid("CodecLabel", "LabelControl", "Codec Type:", 4, 0)
         codec_control = dialog.AddControlToGrid("CodecBox", "ComboControl", "notchlc", 4, 1)
-        dialog.SetItems("CodecBox", ["notchlc", "h264", "h265", "hap", "mov", "exr", "png", "jpg", "tga", "tiff"])
+        dialog.SetItems("CodecBox", ["notchlc", "h264", "h265", "hap", "mov", "exr", "png", "jpeg", "tga", "tiff"])
 
         # Quality and Bitrate
         dialog.AddControlToGrid("QualityLabel", "LabelControl", "Quality:", 4, 2)
