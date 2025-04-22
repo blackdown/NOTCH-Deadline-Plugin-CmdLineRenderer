@@ -131,6 +131,7 @@ For issues related to:
 - Plugin functionality: Check Deadline Monitor logs
 - Render errors: Check the specified log file or Notch render logs
 - Configuration: Review NotchCmdRender.param settings
+- For more information: https://manual.notch.one/1.0/en/docs/reference/notchcmdlinerender/
 
 ## License
 
