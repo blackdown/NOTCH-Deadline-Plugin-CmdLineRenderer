@@ -142,4 +142,4 @@ For issues related to:
 
 ## License
 
-This plugin is written by Antony Bailey on behalf of 10bit FX Ltd.
+This plugin is written by Antony Bailey with the permission of 10bit FX Ltd.
