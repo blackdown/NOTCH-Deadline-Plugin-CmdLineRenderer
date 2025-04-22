@@ -95,6 +95,8 @@ The plugin can be configured through `NotchCmdRender.param`:
    - Log File (optional)
 5. Click "Submit" to send the job to Deadline
 
+![Submission Dialogue](readme_files/RenderQueue.png)
+
 ## Features in Detail
 
 ### Individual Frames Mode
