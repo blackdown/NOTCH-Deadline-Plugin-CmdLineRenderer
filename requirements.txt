@@ -1,0 +1,16 @@
+# Python dependencies for Notch Command Line Render Plugin for Deadline
+
+# Core Python libraries
+os
+sys
+re
+json
+time
+subprocess
+datetime
+pathlib
+
+# Deadline API (provided by Deadline installation)
+# These are imported but not installable via pip
+# Deadline.Plugins
+# Deadline.Scripting
