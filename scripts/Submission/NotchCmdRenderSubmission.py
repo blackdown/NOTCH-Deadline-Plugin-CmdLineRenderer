@@ -526,14 +526,10 @@ def write_job_info(job_info_filename, job_name, frame_range, chunk_size):
 
 def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
     try:
-        # Determine if we should use frame sequences based on codec and individual frames setting
-        use_frame_sequences = individual_frames and codec.lower() == "notchlc"
-
         with open(plugin_info_filename, 'w', encoding='utf-8') as plugin_file:
             plugin_file.write(f"SceneFile={scene}\n")
             plugin_file.write(f"OutputPath={output_full_path}\n")
-            # Pass the combined setting that determines whether to use frame numbers in filenames
-            plugin_file.write(f"IndividualFrames={use_frame_sequences}\n")
+            plugin_file.write(f"IndividualFrames={individual_frames}\n")
             plugin_file.write(f"Codec={codec}\n")
             plugin_file.write(f"BitRate={bitrate}\n")
             plugin_file.write(f"Quality={quality}\n")

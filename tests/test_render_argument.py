@@ -256,6 +256,31 @@ def test_empty_optional_flags_omitted():
     check("no -aov when empty",       "-aov"         not in args)
 
 
+def test_image_codec_uses_current_frame_not_stored_range():
+    """
+    Image codecs with IndividualFrames=True must use the current task frame,
+    not the stored StartFrame/EndFrame from plugin info.
+    Without this, all farm tasks write the full range to the same output path.
+    """
+    for codec in IMAGE_CODECS:
+        output_exts = {"jpeg": ".jpg", "png": ".png", "tga": ".tga",
+                       "exr": ".exr", "tif": ".tif"}
+        p = _make_plugin(_base_info(
+            Codec=codec,
+            OutputPath=f"C:/out/frame{output_exts[codec]}",
+            IndividualFrames=True,   # as written by write_plugin_info after fix
+            StartFrame=0,
+            EndFrame=100,
+        ), frame=42)
+        args = _parse_args(p.RenderArgument())
+        check(f"{codec}: startframe is task frame 42, not stored 0",
+              args.get("-startframe") == "42")
+        check(f"{codec}: endframe is task frame 42, not stored 100",
+              args.get("-endframe") == "42")
+        check(f"{codec}: frame number appended to output path",
+              "_0042" in args.get("-out", ""))
+
+
 def test_exr_quality_passed():
     """EXR quality value is forwarded via -quality."""
     p    = _make_plugin(_base_info(Codec="exr", OutputPath="C:/out/f.exr",
@@ -278,6 +303,7 @@ if __name__ == "__main__":
         test_individual_frames_appends_number,
         test_new_optional_flags,
         test_empty_optional_flags_omitted,
+        test_image_codec_uses_current_frame_not_stored_range,
         test_exr_quality_passed,
     ]
 
