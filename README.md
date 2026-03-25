@@ -145,4 +145,4 @@ For issues related to:
 
 ## License
 
-Written with the permission of 10bit FX Ltd.
+This plugin is written by Antony Bailey with the permission of 10bit FX Ltd.
