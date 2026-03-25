@@ -4,7 +4,7 @@ Label=About
 Category=About Plugin
 CategoryOrder=-1
 Index=0
-Default=NURA Command Line Renderer for Notch 1.0
+Default=NURA Render Node CLI for Notch 2026.1
 Description=Not configurable
 
 [ConcurrentTasks]
@@ -16,7 +16,7 @@ Index=0
 Default=True
 Description=Not configurable
 
-# Path to the command-line render executable (notchcmdlinerender.exe)
+# Path to the command-line render executable (NotchRenderNodeCLI.exe)
 [RenderExecutable]
 Type=filename
 Label=Render Executable Path
@@ -24,7 +24,7 @@ Category=Advanced
 CategoryOrder=1
 CategoryIndex=1
 Index=1
-Default=C:\Program Files\Notch 1.0\notchcmdlinerender.exe
+Default=C:\Program Files\Notch 1.0\NotchRenderNodeCLI.exe
 Description=The path to the executable file used for rendering.
 
 [TempDir]

@@ -242,7 +242,7 @@ class NotchCmdRenderPlugin(DeadlinePlugin):
 
     def GetRenderExecutableCandidate(self):
         program_files = os.environ.get("ProgramW6432") or os.environ.get("ProgramFiles") or "C:\\Program Files"
-        self.hardcoded_exec_path = os.path.join(program_files, "Notch 1.0", "NotchCmdLineRender.exe")
+        self.hardcoded_exec_path = os.path.join(program_files, "Notch 1.0", "NotchRenderNodeCLI.exe")
 
         param_path = RepositoryUtils.GetRepositoryFilePath("custom/plugins/NotchCmdRender/NotchCmdRender.param", True)
         self.param_exec_path = None
@@ -328,40 +328,36 @@ class NotchCmdRenderPlugin(DeadlinePlugin):
                 base, ext = os.path.splitext(output)
                 output = f"{base}_{frame:04d}{ext}"
 
-            # Detect still image formats by file extension
-            _, ext = os.path.splitext(output.lower())
-            still_image_exts = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp', '.exr', '.tga']
-            is_still_image = ext in still_image_exts
-            
-            # Adjust endFrame for still images when start and end are the same
-            if is_still_image and start == end:
-                self.LogInfoWithProgress(f"Still image format detected: {ext}")
-                end = start + 1
-                self.LogInfoWithProgress(f"Adjusted frame range for still image output: {start} to {end}")
-
             # Add required parameters first
             args.extend([
                 "-document", quote(scene),
                 "-out", quote(output),
-                "-startFrame", str(start),
-                "-endFrame", str(end)
+                "-startframe", str(start),
+                "-endframe", str(end)
             ])
 
             # Optional params with validation
             try:
-                opt("Codec", "-Codec", str)
+                opt("Codec", "-codec", str)
             except Exception as e:
                 self.FailRender(f"Invalid codec parameter:\n{str(e)}")
 
             try:
-                opt("ResX", "-Width", int)
-                opt("ResY", "-Height", int)
+                opt("ResX", "-width", int)
+                opt("ResY", "-height", int)
             except Exception as e:
                 self.FailRender(
                     f"Invalid resolution parameters:\n\n"
                     f"Error: {str(e)}\n\n"
                     "Width and Height must be valid numbers"
                 )
+
+            # Still image flag — use explicit -still rather than adjusting frame range
+            codec_val = self.GetPluginInfoEntryWithDefault("Codec", "").lower()
+            still_image_codecs = {"jpeg", "png", "tga", "exr", "tif"}
+            if codec_val in still_image_codecs:
+                args.append("-still")
+                self.LogInfoWithProgress(f"Still image codec detected ({codec_val}): added -still flag")
 
             # Remaining optional params
             opt("FPS", "-fps", float)
@@ -370,6 +366,10 @@ class NotchCmdRenderPlugin(DeadlinePlugin):
             opt("LogFile", "-logfile", str)
             opt("Refines", "-refines", int)
             opt("Layer", "-layer", int)
+            opt("LayerName", "-layername", str)
+            opt("GPU", "-gpu", str)
+            opt("ColourSpace", "-colourspace", str)
+            opt("AOV", "-aov", str)
 
             extra = self.GetPluginInfoEntryWithDefault("ExtraArgs", "").strip()
             if extra:

@@ -18,15 +18,19 @@ ALLOWED_OUTPUT_EXTENSIONS = {
     "h264": [".mp4"],
     "h265": [".mp4"],
     "hap": [".mov"],
-    "mov": [".mov"],
+    "hapa": [".mov"],
+    "hapq": [".mov"],
     "exr": [".exr"],
     "png": [".png"],
     "jpeg": [".jpg", ".jpeg"],
     "tga": [".tga"],
-    "tiff": [".tif", ".tiff"]
+    "tif": [".tif", ".tiff"]
 }
 
-IMAGE_CODECS = {"exr", "png", "jpeg", "tga", "tiff"}
+IMAGE_CODECS = {"exr", "png", "jpeg", "tga", "tif"}
+
+COLOURSPACE_OPTIONS = ["", "acescg", "aces", "srgblinear", "linear", "srgbgamma", "gamma"]
+AOV_OPTIONS = ["", "normal", "normals", "depth", "cryptomatte", "uv", "uvs", "bounceuv", "bounceuvs", "objectid", "ao"]
 
 # Default paths
 user_documents = os.path.join(os.path.expanduser("~"), "Documents")
@@ -281,7 +285,7 @@ def on_codec_changed(*args):
             # For notchlc, keep enabled but don't auto-check
             dialog.SetEnabled("IndividualFramesBox", True)
         else:
-            # For h264, h265, hap, mov - disable the checkbox
+            # For h264, h265, hap, hapa, hapq - disable the checkbox
             dialog.SetEnabled("IndividualFramesBox", False)
             dialog.SetValue("IndividualFramesBox", False)
         
@@ -520,11 +524,11 @@ def write_job_info(job_info_filename, job_name, frame_range, chunk_size):
         return False
     return True
 
-def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, fps, temp_dir):
+def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
     try:
         # Determine if we should use frame sequences based on codec and individual frames setting
         use_frame_sequences = individual_frames and codec.lower() == "notchlc"
-        
+
         with open(plugin_info_filename, 'w', encoding='utf-8') as plugin_file:
             plugin_file.write(f"SceneFile={scene}\n")
             plugin_file.write(f"OutputPath={output_full_path}\n")
@@ -540,7 +544,11 @@ def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_
             plugin_file.write(f"Refines={refines}\n")
             plugin_file.write(f"LogFile={log}\n")
             plugin_file.write(f"Layer={layer}\n")
+            plugin_file.write(f"LayerName={layer_name}\n")
             plugin_file.write(f"FPS={fps}\n")
+            plugin_file.write(f"GPU={gpu}\n")
+            plugin_file.write(f"ColourSpace={colourspace}\n")
+            plugin_file.write(f"AOV={aov}\n")
             plugin_file.write(f"OutputFile={output_full_path}\n")
             plugin_file.write(f"TempDirectory={temp_dir}\n")
     except IOError as e:
@@ -635,12 +643,16 @@ def on_submit(*args):
             
         job_name = dialog.GetValue("JobNameBox")
         refines = dialog.GetValue("RefinesBox")
-        log = get_full_log_path()  # Use the new function
+        log = get_full_log_path()
         layer = dialog.GetValue("LayerBox")
+        layer_name = dialog.GetValue("LayerNameBox").strip()
         fps = dialog.GetValue("FPSBox")
         width = dialog.GetValue("WidthBox")
         height = dialog.GetValue("HeightBox")
         codec = dialog.GetValue("CodecBox")
+        gpu = dialog.GetValue("GPUBox").strip()
+        colourspace = dialog.GetValue("ColourSpaceBox")
+        aov = dialog.GetValue("AOVBox")
 
         frame_range = f"{start_frame}-{end_frame}"
         chunk_size = 1 if individual_frames else end_frame - start_frame + 1
@@ -654,7 +666,7 @@ def on_submit(*args):
             cleanup_temp_files(job_info_filename, plugin_info_filename)
             return
 
-        if not write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, fps, temp_dir):
+        if not write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
             cleanup_temp_files(job_info_filename, plugin_info_filename)
             return
 
@@ -723,7 +735,7 @@ def __main__():
         # Codec selection
         dialog.AddControlToGrid("CodecLabel", "LabelControl", "Codec Type:", 4, 0)
         codec_control = dialog.AddControlToGrid("CodecBox", "ComboControl", "notchlc", 4, 1)
-        dialog.SetItems("CodecBox", ["notchlc", "h264", "h265", "hap", "mov", "exr", "png", "jpeg", "tga", "tiff"])
+        dialog.SetItems("CodecBox", ["notchlc", "h264", "h265", "hap", "hapa", "hapq", "exr", "png", "jpeg", "tga", "tif"])
 
         # Quality and Bitrate
         dialog.AddControlToGrid("QualityLabel", "LabelControl", "Quality:", 4, 2)
@@ -754,16 +766,32 @@ def __main__():
         dialog.AddControlToGrid("RefinesLabel", "LabelControl", "Refines:", 8, 0)
         dialog.AddControlToGrid("RefinesBox", "TextControl", "1", 8, 1)
 
-        # Layer
+        # Layer index and layer name
         dialog.AddControlToGrid("LayerLabel", "LabelControl", "Layer:", 9, 0)
         dialog.AddControlToGrid("LayerBox", "TextControl", "", 9, 1)
+        dialog.AddControlToGrid("LayerNameLabel", "LabelControl", "Layer Name:", 9, 2)
+        dialog.AddControlToGrid("LayerNameBox", "TextControl", "", 9, 3)
 
-        # Log File - replaced with folder and name controls
-        dialog.AddControlToGrid("LogFolderLabel", "LabelControl", "Log Folder:", 10, 0)
-        dialog.AddControlToGrid("LogFolderBox", "FolderBrowserControl", os.path.dirname(default_log_path), 10, 1)
+        # GPU
+        dialog.AddControlToGrid("GPULabel", "LabelControl", "GPU:", 10, 0)
+        dialog.AddControlToGrid("GPUBox", "TextControl", "", 10, 1)
 
-        dialog.AddControlToGrid("LogFileNameLabel", "LabelControl", "Log Filename:", 11, 0)
-        dialog.AddControlToGrid("LogFileNameBox", "TextControl", "NotchRenderLog.txt", 11, 1)
+        # Colour Space
+        dialog.AddControlToGrid("ColourSpaceLabel", "LabelControl", "Colour Space:", 11, 0)
+        colourspace_control = dialog.AddControlToGrid("ColourSpaceBox", "ComboControl", "", 11, 1)
+        dialog.SetItems("ColourSpaceBox", COLOURSPACE_OPTIONS)
+
+        # AOV
+        dialog.AddControlToGrid("AOVLabel", "LabelControl", "AOV:", 12, 0)
+        aov_control = dialog.AddControlToGrid("AOVBox", "ComboControl", "", 12, 1)
+        dialog.SetItems("AOVBox", AOV_OPTIONS)
+
+        # Log File
+        dialog.AddControlToGrid("LogFolderLabel", "LabelControl", "Log Folder:", 13, 0)
+        dialog.AddControlToGrid("LogFolderBox", "FolderBrowserControl", os.path.dirname(default_log_path), 13, 1)
+
+        dialog.AddControlToGrid("LogFileNameLabel", "LabelControl", "Log Filename:", 14, 0)
+        dialog.AddControlToGrid("LogFileNameBox", "TextControl", "NotchRenderLog.txt", 14, 1)
 
         dialog.EndGrid()
 
