@@ -1,8 +1,18 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
 ## [Unreleased]
 
-## [2026.1] - 2026-03-25
+## [2026.1.1] - 2026-03-25
+
+### Fixed
+- Image codec farm tasks incorrectly used the full stored frame range instead of the current task frame, causing all workers to overwrite the same output file
+- Bitrate box overflowing the dialog width — Quality and Bitrate moved to their own row
+
+---
+
+## [2026.1.0] - 2026-03-25
 
 ### Changed
 - Renamed executable from `NotchCmdLineRender.exe` to `NotchRenderNodeCLI.exe` (install folder remains `Notch 1.0`)
@@ -17,10 +27,6 @@
 - New optional render flags: `-layername`, `-gpu`, `-colourspace`, `-aov`
 - Layer Name, GPU, Colour Space, and AOV fields in the submission dialog
 - Unit test suite (`tests/test_render_argument.py`) — runs without Deadline or Notch installed
-
-### Fixed
-- Bitrate box overflowing the dialog width — Quality and Bitrate moved to their own row
-- Image codec farm tasks incorrectly used the full stored frame range instead of the current task frame, causing all workers to overwrite the same output file
 
 ### Removed
 - `mov` codec (no longer supported by the Notch Render Node CLI)

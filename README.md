@@ -3,20 +3,26 @@ A [Thinkbox Deadline](https://aws.amazon.com/thinkbox-deadline/) submission plug
 
 ![NURA™ Logo Badge](scripts/Submission/icon.png)
 
+**Last updated: 25 March 2026**
+
 ## Features
 
-- Support for Notch 2026.1 Render Node CLI
+- Support for Notch 2026.1 Render Node CLI (`NotchRenderNodeCLI.exe`)
 - Multiple output codec options (notchlc, h264, h265, hap, hapa, hapq, exr, png, jpeg, tga, tif)
 - Frame range rendering with configurable chunk sizes
 - Individual frame export support for image sequences and notchlc codec
+- Correct per-frame output path construction for distributed farm rendering
 - Real-time filename preview showing actual output format
 - Resolution control (up to 16384x16384)
 - Configurable quality and bitrate settings
-- Custom layer rendering support
+- Custom layer rendering by index or name
+- GPU selection for multi-GPU render nodes
+- Colour space and AOV buffer support
 - Comprehensive path validation and sanitization
 - Automatic file cleanup
 - Windows UNC path support
 - Detailed logging system
+- Unit test suite for core render argument logic
 
 ![Submission Dialogue](readme_files/Submission_Dialog.png)
 
@@ -63,7 +69,7 @@ A [Thinkbox Deadline](https://aws.amazon.com/thinkbox-deadline/) submission plug
       └─ NotchCmdRenderSubmission.py
 ```
 
-2. Ensure the Notch Render Node CLI (`NotchRenderNodeCLI.exe`) is installed in the default location or update the path in `NotchCmdRender.param`
+2. Ensure the Notch Render Node CLI (`NotchRenderNodeCLI.exe`) is installed in the default location (`C:\Program Files\Notch 1.0\`) or update the path in `NotchCmdRender.param`
 
 ## Configuration
 
@@ -106,14 +112,21 @@ The plugin can be configured through `NotchCmdRender.param`:
 - Automatically enabled for image codecs (exr, png, jpeg, tga, tif)
 - Optional for notchlc codec (user-selectable)
 - Disabled for other video codecs (h264, h265, hap, hapa, hapq)
-- Appends frame numbers to filenames only when needed
-- Sets chunk size to 1 for optimal distribution
+- Each farm task receives the correct single frame and a unique output path
+- Appends zero-padded frame numbers to filenames (e.g. `output_0042.png`)
+- Sets chunk size to 1 for optimal farm distribution
 - Real-time preview of resulting filename format
 
-### Codec-Specific Behavior
+### Codec-Specific Behaviour
 - Image formats (exr, png, jpeg, tga, tif): Always use individual frames, `-still` flag passed automatically
 - NotchLC (.mov): Optional individual frames with frame number appending
 - Video formats (h264, h265, hap, hapa, hapq): Always single file output, no frame numbering
+
+### New in 2026.1
+- Layer Name (`-layername`): Select a composition layer by name instead of index
+- GPU (`-gpu`): Pin rendering to a specific GPU adapter — useful on multi-GPU render nodes
+- Colour Space (`-colourspace`): Set output colour space (acescg, aces, srgblinear, linear, srgbgamma, gamma)
+- AOV (`-aov`): Output a specific render buffer (normal, depth, cryptomatte, uv, objectid, ao, and others)
 
 ### Path Validation
 - Checks for unsafe characters
@@ -129,19 +142,27 @@ The plugin can be configured through `NotchCmdRender.param`:
 - Cleans up temporary files
 - Logs all operations
 
-### UI Improvements
+### UI
 - Interactive filename preview shows actual output format with/without frame numbers
 - Codec selection automatically configures related options
 - Logical control layout with related options grouped together
 - Context-aware controls that enable/disable based on compatibility
+
+## Testing
+
+A unit test suite is included at `tests/test_render_argument.py`. It mocks the Deadline base class so tests can be run on any machine without Deadline or Notch installed:
+
+```
+python3 tests/test_render_argument.py
+```
 
 ## Support
 
 For issues related to:
 - Plugin functionality: Check Deadline Monitor logs
 - Render errors: Check the specified log file or Notch render logs
-- Configuration: Review NotchCmdRender.param settings
-- For more information: https://manual.notch.one/2026.1/en/docs/reference/notchrendernodecli/
+- Configuration: Review `NotchCmdRender.param` settings
+- Notch CLI reference: https://manual.notch.one/2026.1/en/docs/reference/notchrendernodecli/
 
 ## License
 
