@@ -737,61 +737,58 @@ def __main__():
         codec_control = dialog.AddControlToGrid("CodecBox", "ComboControl", "notchlc", 4, 1)
         dialog.SetItems("CodecBox", ["notchlc", "h264", "h265", "hap", "hapa", "hapq", "exr", "png", "jpeg", "tga", "tif"])
 
-        # Quality and Bitrate
-        dialog.AddControlToGrid("QualityLabel", "LabelControl", "Quality:", 4, 2)
-        dialog.AddControlToGrid("QualityBox", "TextControl", "", 4, 3)
-
-        dialog.AddControlToGrid("BitrateLabel", "LabelControl", "Bitrate:", 4, 4)
-        dialog.AddControlToGrid("BitrateBox", "TextControl", "", 4, 5)
+        # Quality and Bitrate on their own row
+        dialog.AddControlToGrid("QualityLabel", "LabelControl", "Quality:", 5, 0)
+        dialog.AddControlToGrid("QualityBox", "TextControl", "", 5, 1)
+        dialog.AddControlToGrid("BitrateLabel", "LabelControl", "Bitrate:", 5, 2)
+        dialog.AddControlToGrid("BitrateBox", "TextControl", "", 5, 3)
 
         # Resolution
-        dialog.AddControlToGrid("WidthLabel", "LabelControl", "Width:", 5, 0)
-        dialog.AddControlToGrid("WidthBox", "TextControl", "1920", 5, 1)
-
-        dialog.AddControlToGrid("HeightLabel", "LabelControl", "Height:", 5, 2)
-        dialog.AddControlToGrid("HeightBox", "TextControl", "1080", 5, 3)
+        dialog.AddControlToGrid("WidthLabel", "LabelControl", "Width:", 6, 0)
+        dialog.AddControlToGrid("WidthBox", "TextControl", "1920", 6, 1)
+        dialog.AddControlToGrid("HeightLabel", "LabelControl", "Height:", 6, 2)
+        dialog.AddControlToGrid("HeightBox", "TextControl", "1080", 6, 3)
 
         # Frame Range
-        dialog.AddControlToGrid("StartFrameLabel", "LabelControl", "Start Frame:", 6, 0)
-        dialog.AddControlToGrid("StartFrameBox", "TextControl", "0", 6, 1)
-
-        dialog.AddControlToGrid("EndFrameLabel", "LabelControl", "End Frame:", 6, 2)
-        dialog.AddControlToGrid("EndFrameBox", "TextControl", "100", 6, 3)
+        dialog.AddControlToGrid("StartFrameLabel", "LabelControl", "Start Frame:", 7, 0)
+        dialog.AddControlToGrid("StartFrameBox", "TextControl", "0", 7, 1)
+        dialog.AddControlToGrid("EndFrameLabel", "LabelControl", "End Frame:", 7, 2)
+        dialog.AddControlToGrid("EndFrameBox", "TextControl", "100", 7, 3)
 
         # FPS
-        dialog.AddControlToGrid("FPSLabel", "LabelControl", "FPS:", 7, 0)
-        dialog.AddControlToGrid("FPSBox", "TextControl", "30", 7, 1)
+        dialog.AddControlToGrid("FPSLabel", "LabelControl", "FPS:", 8, 0)
+        dialog.AddControlToGrid("FPSBox", "TextControl", "30", 8, 1)
 
         # Refines
-        dialog.AddControlToGrid("RefinesLabel", "LabelControl", "Refines:", 8, 0)
-        dialog.AddControlToGrid("RefinesBox", "TextControl", "1", 8, 1)
+        dialog.AddControlToGrid("RefinesLabel", "LabelControl", "Refines:", 9, 0)
+        dialog.AddControlToGrid("RefinesBox", "TextControl", "1", 9, 1)
 
         # Layer index and layer name
-        dialog.AddControlToGrid("LayerLabel", "LabelControl", "Layer:", 9, 0)
-        dialog.AddControlToGrid("LayerBox", "TextControl", "", 9, 1)
-        dialog.AddControlToGrid("LayerNameLabel", "LabelControl", "Layer Name:", 9, 2)
-        dialog.AddControlToGrid("LayerNameBox", "TextControl", "", 9, 3)
+        dialog.AddControlToGrid("LayerLabel", "LabelControl", "Layer:", 10, 0)
+        dialog.AddControlToGrid("LayerBox", "TextControl", "", 10, 1)
+        dialog.AddControlToGrid("LayerNameLabel", "LabelControl", "Layer Name:", 10, 2)
+        dialog.AddControlToGrid("LayerNameBox", "TextControl", "", 10, 3)
 
         # GPU
-        dialog.AddControlToGrid("GPULabel", "LabelControl", "GPU:", 10, 0)
-        dialog.AddControlToGrid("GPUBox", "TextControl", "", 10, 1)
+        dialog.AddControlToGrid("GPULabel", "LabelControl", "GPU:", 11, 0)
+        dialog.AddControlToGrid("GPUBox", "TextControl", "", 11, 1)
 
         # Colour Space
-        dialog.AddControlToGrid("ColourSpaceLabel", "LabelControl", "Colour Space:", 11, 0)
-        colourspace_control = dialog.AddControlToGrid("ColourSpaceBox", "ComboControl", "", 11, 1)
+        dialog.AddControlToGrid("ColourSpaceLabel", "LabelControl", "Colour Space:", 12, 0)
+        colourspace_control = dialog.AddControlToGrid("ColourSpaceBox", "ComboControl", "", 12, 1)
         dialog.SetItems("ColourSpaceBox", COLOURSPACE_OPTIONS)
 
         # AOV
-        dialog.AddControlToGrid("AOVLabel", "LabelControl", "AOV:", 12, 0)
-        aov_control = dialog.AddControlToGrid("AOVBox", "ComboControl", "", 12, 1)
+        dialog.AddControlToGrid("AOVLabel", "LabelControl", "AOV:", 13, 0)
+        aov_control = dialog.AddControlToGrid("AOVBox", "ComboControl", "", 13, 1)
         dialog.SetItems("AOVBox", AOV_OPTIONS)
 
         # Log File
-        dialog.AddControlToGrid("LogFolderLabel", "LabelControl", "Log Folder:", 13, 0)
-        dialog.AddControlToGrid("LogFolderBox", "FolderBrowserControl", os.path.dirname(default_log_path), 13, 1)
+        dialog.AddControlToGrid("LogFolderLabel", "LabelControl", "Log Folder:", 14, 0)
+        dialog.AddControlToGrid("LogFolderBox", "FolderBrowserControl", os.path.dirname(default_log_path), 14, 1)
 
-        dialog.AddControlToGrid("LogFileNameLabel", "LabelControl", "Log Filename:", 14, 0)
-        dialog.AddControlToGrid("LogFileNameBox", "TextControl", "NotchRenderLog.txt", 14, 1)
+        dialog.AddControlToGrid("LogFileNameLabel", "LabelControl", "Log Filename:", 15, 0)
+        dialog.AddControlToGrid("LogFileNameBox", "TextControl", "NotchRenderLog.txt", 15, 1)
 
         dialog.EndGrid()
 
