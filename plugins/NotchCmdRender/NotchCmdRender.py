@@ -352,12 +352,11 @@ class NotchCmdRenderPlugin(DeadlinePlugin):
                     "Width and Height must be valid numbers"
                 )
 
-            # Still image flag — use explicit -still rather than adjusting frame range
-            codec_val = self.GetPluginInfoEntryWithDefault("Codec", "").lower()
-            still_image_codecs = {"jpeg", "png", "tga", "exr", "tif"}
-            if codec_val in still_image_codecs:
+            # Still image flag — only when explicitly requested by the user
+            still = self.GetBooleanPluginInfoEntryWithDefault("StillImage", False)
+            if still:
                 args.append("-still")
-                self.LogInfoWithProgress(f"Still image codec detected ({codec_val}): added -still flag")
+                self.LogInfoWithProgress("Still image mode enabled: -still flag added")
 
             # Remaining optional params
             opt("FPS", "-fps", float)

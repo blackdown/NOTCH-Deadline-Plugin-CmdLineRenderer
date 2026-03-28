@@ -524,12 +524,13 @@ def write_job_info(job_info_filename, job_name, frame_range, chunk_size):
         return False
     return True
 
-def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
+def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, still_image, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
     try:
         with open(plugin_info_filename, 'w', encoding='utf-8') as plugin_file:
             plugin_file.write(f"SceneFile={scene}\n")
             plugin_file.write(f"OutputPath={output_full_path}\n")
             plugin_file.write(f"IndividualFrames={individual_frames}\n")
+            plugin_file.write(f"StillImage={still_image}\n")
             plugin_file.write(f"Codec={codec}\n")
             plugin_file.write(f"BitRate={bitrate}\n")
             plugin_file.write(f"Quality={quality}\n")
@@ -612,6 +613,7 @@ def on_submit(*args):
 
         scene = dialog.GetValue("SceneFileBox")
         individual_frames = dialog.GetValue("IndividualFramesBox")
+        still_image = dialog.GetValue("StillImageBox")
         
         try:
             start_frame = int(dialog.GetValue("StartFrameBox"))
@@ -662,7 +664,7 @@ def on_submit(*args):
             cleanup_temp_files(job_info_filename, plugin_info_filename)
             return
 
-        if not write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
+        if not write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, still_image, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
             cleanup_temp_files(job_info_filename, plugin_info_filename)
             return
 
@@ -732,6 +734,8 @@ def __main__():
         dialog.AddControlToGrid("CodecLabel", "LabelControl", "Codec Type:", 4, 0)
         codec_control = dialog.AddControlToGrid("CodecBox", "ComboControl", "notchlc", 4, 1)
         dialog.SetItems("CodecBox", ["notchlc", "h264", "h265", "hap", "hapa", "hapq", "exr", "png", "jpeg", "tga", "tif"])
+        dialog.AddControlToGrid("StillImageLabel", "LabelControl", "Still Image:", 4, 2)
+        dialog.AddControlToGrid("StillImageBox", "CheckBoxControl", False, 4, 3)
 
         # Quality and Bitrate on their own row
         dialog.AddControlToGrid("QualityLabel", "LabelControl", "Quality:", 5, 0)

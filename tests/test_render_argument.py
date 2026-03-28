@@ -126,6 +126,7 @@ def _base_info(**overrides):
         "GPU":            "",
         "ColourSpace":    "",
         "AOV":            "",
+        "StillImage":     False,
         "ExtraArgs":      "",
     }
     defaults.update(overrides)
@@ -184,38 +185,28 @@ def test_required_flags_and_casing():
     check("endframe=100",    args.get("-endframe")   == "100")
 
 
-def test_video_codec_no_still():
-    """Video codecs must not receive the -still flag."""
-    for codec in VIDEO_CODECS:
-        p    = _make_plugin(_base_info(Codec=codec))
+def test_no_codec_auto_still():
+    """No codec should automatically trigger -still — it must be user-controlled."""
+    for codec in VIDEO_CODECS + IMAGE_CODECS:
+        p    = _make_plugin(_base_info(Codec=codec, StillImage=False))
         args = _parse_args(p.RenderArgument())
-        check(f"{codec}: no -still", "-still" not in args)
+        check(f"{codec}: no -still when StillImage=False", "-still" not in args)
 
 
-def test_image_codecs_get_still():
-    """Image codecs must receive the -still flag."""
-    for codec in IMAGE_CODECS:
-        output_exts = {"jpeg": ".jpg", "png": ".png", "tga": ".tga",
-                       "exr": ".exr", "tif": ".tif"}
-        p = _make_plugin(_base_info(
-            Codec=codec,
-            OutputPath=f"C:/out/frame{output_exts[codec]}",
-            IndividualFrames=True,
-            StartFrame=5, EndFrame=5,
-        ), frame=5)
-        args = _parse_args(p.RenderArgument())
-        check(f"{codec}: has -still", "-still" in args)
-
-
-def test_still_image_endframe_not_bumped():
-    """endframe should stay equal to startframe for still images (no +1 hack)."""
-    p    = _make_plugin(_base_info(
-        Codec="png", OutputPath="C:/out/frame.png",
-        IndividualFrames=True, StartFrame=10, EndFrame=10,
-    ), frame=10)
+def test_still_flag_when_user_requests():
+    """-still is passed only when StillImage is explicitly set."""
+    p    = _make_plugin(_base_info(StillImage=True))
     args = _parse_args(p.RenderArgument())
-    check("endframe not bumped to 11", args.get("-endframe") == "10",
-          "old code bumped still-image endframe by 1")
+    check("StillImage=True: has -still", "-still" in args)
+
+
+def test_still_false_by_default():
+    """-still must not appear when StillImage key is absent."""
+    info = _base_info()
+    del info["StillImage"]
+    p    = _make_plugin(info)
+    args = _parse_args(p.RenderArgument())
+    check("no StillImage key: no -still", "-still" not in args)
 
 
 def test_individual_frames_appends_number():
@@ -297,9 +288,9 @@ def test_exr_quality_passed():
 if __name__ == "__main__":
     tests = [
         test_required_flags_and_casing,
-        test_video_codec_no_still,
-        test_image_codecs_get_still,
-        test_still_image_endframe_not_bumped,
+        test_no_codec_auto_still,
+        test_still_flag_when_user_requests,
+        test_still_false_by_default,
         test_individual_frames_appends_number,
         test_new_optional_flags,
         test_empty_optional_flags_omitted,
