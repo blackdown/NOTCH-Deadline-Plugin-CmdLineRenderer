@@ -129,7 +129,7 @@ The plugin can be configured through `NotchCmdRender.param`:
 - Video formats (h264, h265, hap, hapa, hapq): Always single file output, no frame numbering
 
 ### Still Image Mode
-The "Still Image" checkbox passes the `-still` flag to the renderer. This skips pre-roll and disables all temporal processing including motion blur — the frame is rendered in isolation with no knowledge of surrounding frames. Only enable this for genuinely static content where no temporal effects are present. Do not use it for image sequences that contain motion, as it will produce incorrect results.
+The "Still Image" checkbox passes the `-still` flag to the renderer. This pre-rolls every individual frame from the beginning, meaning each frame is treated as if it were the first. As a result, temporal effects such as motion blur are lost and rendering is significantly slower. Only enable this for genuinely static content where no temporal effects are present. Do not use it for image sequences that contain motion, as it will produce incorrect results.
 
 ### New in 2026.1
 - Layer Name (`-layername`): Select a composition layer by name instead of index
