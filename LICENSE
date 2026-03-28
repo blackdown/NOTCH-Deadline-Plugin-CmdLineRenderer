@@ -2,22 +2,27 @@ Copyright (c) 2026 Antony Bailey / Blackdown Solutions
 All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software, to use, copy, modify, and distribute it for personal or
-non-commercial purposes, subject to the following conditions:
+of this software, to use and modify it for personal or non-commercial purposes,
+subject to the following conditions:
 
 1. ATTRIBUTION
    The above copyright notice and this permission notice must be included in
    all copies or substantial portions of the software. Credit to the original
    author (Antony Bailey / Blackdown Solutions) must be clearly retained in
-   any derivative work, documentation, or redistribution.
+   any derivative work or documentation.
 
-2. NON-COMMERCIAL USE
+2. NO DISTRIBUTION OR RESALE
+   Redistribution, resale, sublicensing, or sharing of this software or any
+   derivative work, in whole or in part, in any form, is strictly prohibited
+   without prior written permission from the author.
+
+3. NON-COMMERCIAL USE
    Use of this software in any personal, educational, or non-commercial context
    is permitted on a donationware basis. You are encouraged to make a voluntary
    donation of any amount to support continued development:
    https://paypal.me/blackdown
 
-3. COMMERCIAL USE
+4. COMMERCIAL USE
    Use of this software, in whole or in part, within any commercial project,
    production pipeline, paid service, or organisation generating revenue requires
    a minimum one-time donation of £200 (GBP) to the author prior to use.
@@ -28,12 +33,12 @@ non-commercial purposes, subject to the following conditions:
    - Integration into a product or service offered for sale or subscription
    - Use by a company or organisation as part of revenue-generating activity
 
-4. NO WARRANTY
+5. NO WARRANTY
    This software is provided "as is", without warranty of any kind, express or
    implied. The author shall not be liable for any claim, damages, or other
    liability arising from use of the software.
 
-5. NO ENDORSEMENT
+6. NO ENDORSEMENT
    This software is an independent, community-made project and is not an
    official product of Notch or 10bit FX Ltd. Use of this software does not
    imply any affiliation with or endorsement by those organisations.
