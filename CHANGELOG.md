@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2026.1.2] - 2026-03-28
+
+### Changed
+- Removed automatic `-still` flag based on codec type — it disabled motion blur and temporal effects on image sequences, which was incorrect
+- `-still` is now user-controlled via a "Still Image" checkbox (unchecked by default) and should only be used for a true static image with no temporal processing required
+
 ## [2026.1.1] - 2026-03-25
 
 ### Fixed
