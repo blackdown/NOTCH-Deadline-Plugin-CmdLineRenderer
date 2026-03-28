@@ -5,6 +5,8 @@ A [Thinkbox Deadline](https://aws.amazon.com/thinkbox-deadline/) submission plug
 
 > **Disclaimer:** This is an independent, community-made plugin and is not an official product of Notch or 10bit FX Ltd. It is provided as-is with no warranty or official support.
 
+If this plugin has been useful, consider [buying me a coffee ☕](https://paypal.me/blackdown) — it helps keep projects like this going!
+
 **Last updated: 28 March 2026**
 
 ## Features
