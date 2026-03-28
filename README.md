@@ -176,4 +176,6 @@ If this plugin has saved you time on a project, a small donation is always appre
 
 ## License
 
-This plugin is written by Antony Bailey with the permission of 10bit FX Ltd.
+Copyright (c) 2026 Antony Bailey / Blackdown Solutions. Written with the permission of 10bit FX Ltd.
+
+Free for personal and non-commercial use with attribution. **Commercial use requires a minimum donation of £200** — see the [LICENSE](LICENSE) file for full terms.
