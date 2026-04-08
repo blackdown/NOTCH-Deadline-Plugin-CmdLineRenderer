@@ -4,7 +4,7 @@ Label=About
 Category=About Plugin
 CategoryOrder=-1
 Index=0
-Default=NURA Render Node CLI for Notch 2026.1
+Default=NURA Render Node CLI for Notch 2026.1 (Build 1.0.0.210)
 Description=Not configurable
 
 [ConcurrentTasks]

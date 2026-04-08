@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ## [2026.1.3] - 2026-04-08
+> Targets Notch 2026.1 Build 1.0.0.210 (8th April 2026)
+> Release notes: https://manual.notch.one/2026.1/en/docs/whats-new/release-notes/1-0-0/#20261-build-100210-8th-april-2026
 
 ### Added
 - `-stdout 1` always passed automatically for headless farm operation

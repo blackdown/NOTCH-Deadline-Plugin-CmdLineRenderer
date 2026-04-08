@@ -11,7 +11,7 @@ If this plugin has been useful, consider [buying me a coffee ☕](https://paypal
 
 ## Features
 
-- Support for Notch 2026.1 Render Node CLI (`NotchRenderNodeCLI.exe`)
+- Support for Notch 2026.1 Build 1.0.0.210 Render Node CLI (`NotchRenderNodeCLI.exe`)
 - Multiple output codec options (notchlc, h264, h265, hap, hapa, hapq, exr, png, jpeg, tga, tif)
 - Frame range rendering with configurable chunk sizes
 - Individual frame export support for image sequences and notchlc codec
@@ -56,7 +56,7 @@ If this plugin has been useful, consider [buying me a coffee ☕](https://paypal
 ## Requirements
 
 - Windows operating system
-- Notch 2026.1 or higher installed
+- Notch 2026.1 Build 1.0.0.210 or higher installed
 - Codemeter 8.20a or higher installed
 - A Notch VFX or RFX License (or a dedicated Render Node License)
 - Deadline Repository and Client
