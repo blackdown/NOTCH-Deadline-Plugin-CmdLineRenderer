@@ -29,7 +29,7 @@ ALLOWED_OUTPUT_EXTENSIONS = {
 
 IMAGE_CODECS = {"exr", "png", "jpeg", "tga", "tif"}
 
-COLOURSPACE_OPTIONS = ["", "acescg", "aces", "srgblinear", "linear", "srgbgamma", "gamma"]
+COLOURSPACE_OPTIONS = ["", "acescg", "aces", "srgblinear", "linear", "srgbgamma", "gamma", "p3linear", "dcip3", "p3d65", "rec2020", "p3display", "rec709"]
 AOV_OPTIONS = ["", "normal", "normals", "depth", "cryptomatte", "uv", "uvs", "bounceuv", "bounceuvs", "objectid", "ao"]
 
 # Default paths
@@ -524,7 +524,7 @@ def write_job_info(job_info_filename, job_name, frame_range, chunk_size):
         return False
     return True
 
-def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, still_image, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
+def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, still_image, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, preroll_start, auto_preroll, tiled, tile_size, overscan, metadata_file, debug, temp_dir):
     try:
         with open(plugin_info_filename, 'w', encoding='utf-8') as plugin_file:
             plugin_file.write(f"SceneFile={scene}\n")
@@ -546,6 +546,13 @@ def write_plugin_info(plugin_info_filename, scene, output_full_path, individual_
             plugin_file.write(f"GPU={gpu}\n")
             plugin_file.write(f"ColourSpace={colourspace}\n")
             plugin_file.write(f"AOV={aov}\n")
+            plugin_file.write(f"PrerollStart={preroll_start}\n")
+            plugin_file.write(f"AutoPreroll={auto_preroll}\n")
+            plugin_file.write(f"Tiled={tiled}\n")
+            plugin_file.write(f"TileSize={tile_size}\n")
+            plugin_file.write(f"Overscan={overscan}\n")
+            plugin_file.write(f"MetadataFile={metadata_file}\n")
+            plugin_file.write(f"Debug={debug}\n")
             plugin_file.write(f"OutputFile={output_full_path}\n")
             plugin_file.write(f"TempDirectory={temp_dir}\n")
     except IOError as e:
@@ -651,6 +658,13 @@ def on_submit(*args):
         gpu = dialog.GetValue("GPUBox").strip()
         colourspace = dialog.GetValue("ColourSpaceBox")
         aov = dialog.GetValue("AOVBox")
+        preroll_start = dialog.GetValue("PrerollStartBox").strip()
+        auto_preroll = dialog.GetValue("AutoPrerollBox")
+        tiled = dialog.GetValue("TiledBox")
+        tile_size = dialog.GetValue("TileSizeBox").strip()
+        overscan = dialog.GetValue("OverscanBox").strip()
+        metadata_file = dialog.GetValue("MetadataFileBox").strip()
+        debug = dialog.GetValue("DebugBox")
 
         frame_range = f"{start_frame}-{end_frame}"
         chunk_size = 1 if individual_frames else end_frame - start_frame + 1
@@ -664,7 +678,7 @@ def on_submit(*args):
             cleanup_temp_files(job_info_filename, plugin_info_filename)
             return
 
-        if not write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, still_image, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, temp_dir):
+        if not write_plugin_info(plugin_info_filename, scene, output_full_path, individual_frames, still_image, codec, bitrate, quality, width, height, start_frame, end_frame, refines, log, layer, layer_name, fps, gpu, colourspace, aov, preroll_start, auto_preroll, tiled, tile_size, overscan, metadata_file, debug, temp_dir):
             cleanup_temp_files(job_info_filename, plugin_info_filename)
             return
 
@@ -783,12 +797,33 @@ def __main__():
         aov_control = dialog.AddControlToGrid("AOVBox", "ComboControl", "", 13, 1)
         dialog.SetItems("AOVBox", AOV_OPTIONS)
 
-        # Log File
-        dialog.AddControlToGrid("LogFolderLabel", "LabelControl", "Log Folder:", 14, 0)
-        dialog.AddControlToGrid("LogFolderBox", "FolderBrowserControl", os.path.dirname(default_log_path), 14, 1)
+        # Pre-roll
+        dialog.AddControlToGrid("PrerollStartLabel", "LabelControl", "Pre-roll Start (s):", 14, 0)
+        dialog.AddControlToGrid("PrerollStartBox", "TextControl", "", 14, 1)
+        dialog.AddControlToGrid("AutoPrerollLabel", "LabelControl", "Auto Pre-roll:", 14, 2)
+        dialog.AddControlToGrid("AutoPrerollBox", "CheckBoxControl", True, 14, 3)
 
-        dialog.AddControlToGrid("LogFileNameLabel", "LabelControl", "Log Filename:", 15, 0)
-        dialog.AddControlToGrid("LogFileNameBox", "TextControl", "NotchRenderLog.txt", 15, 1)
+        # Tiled rendering
+        dialog.AddControlToGrid("TiledLabel", "LabelControl", "Tiled:", 15, 0)
+        dialog.AddControlToGrid("TiledBox", "CheckBoxControl", False, 15, 1)
+        dialog.AddControlToGrid("TileSizeLabel", "LabelControl", "Tile Size (px):", 15, 2)
+        dialog.AddControlToGrid("TileSizeBox", "TextControl", "", 15, 3)
+
+        dialog.AddControlToGrid("OverscanLabel", "LabelControl", "Overscan (px):", 16, 0)
+        dialog.AddControlToGrid("OverscanBox", "TextControl", "", 16, 1)
+
+        # Metadata and debug
+        dialog.AddControlToGrid("MetadataFileLabel", "LabelControl", "Metadata File:", 17, 0)
+        dialog.AddControlToGrid("MetadataFileBox", "TextControl", "", 17, 1)
+        dialog.AddControlToGrid("DebugLabel", "LabelControl", "Debug Logging:", 17, 2)
+        dialog.AddControlToGrid("DebugBox", "CheckBoxControl", False, 17, 3)
+
+        # Log File
+        dialog.AddControlToGrid("LogFolderLabel", "LabelControl", "Log Folder:", 18, 0)
+        dialog.AddControlToGrid("LogFolderBox", "FolderBrowserControl", os.path.dirname(default_log_path), 18, 1)
+
+        dialog.AddControlToGrid("LogFileNameLabel", "LabelControl", "Log Filename:", 19, 0)
+        dialog.AddControlToGrid("LogFileNameBox", "TextControl", "NotchRenderLog.txt", 19, 1)
 
         dialog.EndGrid()
 

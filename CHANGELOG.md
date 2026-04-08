@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2026.1.3] - 2026-04-08
+
+### Added
+- `-stdout 1` always passed automatically for headless farm operation
+- `-autopreroll 0|1` — auto pre-roll toggle, enabled by default (checkbox in dialog)
+- `-prerollstart` — pre-roll duration in seconds (matches Pre-Roll parameter in Builder)
+- `-tiled 0|1` — tiled rendering for large canvas sizes that won't fit in GPU buffer
+- `-tilesize` — tile size in pixels (requires tiled enabled; 2048–4096px recommended for Path Tracer)
+- `-overscan` — overscan in pixels per tile for seamless blending in post (requires tiled enabled)
+- `-metadata filename` — export render metadata to a JSON file
+- `-debug 0|1` — extra logging, disabled by default
+
+### Changed
+- Expanded colour space options to match Notch Builder: added `p3linear`, `dcip3`, `p3d65`, `rec2020`, `p3display`, `rec709`
+
 ## [2026.1.2] - 2026-03-28
 
 ### Changed

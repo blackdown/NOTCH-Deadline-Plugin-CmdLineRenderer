@@ -127,6 +127,13 @@ def _base_info(**overrides):
         "ColourSpace":    "",
         "AOV":            "",
         "StillImage":     False,
+        "PrerollStart":   "",
+        "AutoPreroll":    True,
+        "Tiled":          False,
+        "TileSize":       "",
+        "Overscan":       "",
+        "MetadataFile":   "",
+        "Debug":          False,
         "ExtraArgs":      "",
     }
     defaults.update(overrides)
@@ -272,6 +279,64 @@ def test_image_codec_uses_current_frame_not_stored_range():
               "_0042" in args.get("-out", ""))
 
 
+def test_stdout_always_enabled():
+    """-stdout 1 must always be present for headless farm operation."""
+    p    = _make_plugin(_base_info())
+    args = _parse_args(p.RenderArgument())
+    check("has -stdout", "-stdout" in args)
+    check("stdout=1",    args.get("-stdout") == "1")
+
+
+def test_autopreroll_default_enabled():
+    """-autopreroll 1 passed by default."""
+    p    = _make_plugin(_base_info(AutoPreroll=True))
+    args = _parse_args(p.RenderArgument())
+    check("autopreroll=1 by default", args.get("-autopreroll") == "1")
+
+
+def test_autopreroll_can_be_disabled():
+    """-autopreroll 0 when user disables it."""
+    p    = _make_plugin(_base_info(AutoPreroll=False))
+    args = _parse_args(p.RenderArgument())
+    check("autopreroll=0 when disabled", args.get("-autopreroll") == "0")
+
+
+def test_tiled_flags():
+    """Tiled rendering passes -tiled 1, tilesize, and overscan."""
+    p    = _make_plugin(_base_info(Tiled=True, TileSize="2048", Overscan="256"))
+    args = _parse_args(p.RenderArgument())
+    check("has -tiled 1",    args.get("-tiled") == "1")
+    check("has -tilesize",   "-tilesize" in args)
+    check("tilesize=2048",   args.get("-tilesize") == "2048")
+    check("has -overscan",   "-overscan" in args)
+    check("overscan=256",    args.get("-overscan") == "256")
+
+
+def test_tiled_off_omits_flags():
+    """When tiling is off, -tiled, -tilesize and -overscan must not appear."""
+    p    = _make_plugin(_base_info(Tiled=False, TileSize="2048", Overscan="256"))
+    args = _parse_args(p.RenderArgument())
+    check("no -tiled when off",    "-tiled"    not in args)
+    check("no -tilesize when off", "-tilesize" not in args)
+    check("no -overscan when off", "-overscan" not in args)
+
+
+def test_debug_flag():
+    """-debug 1 passed only when Debug is enabled."""
+    p_on  = _make_plugin(_base_info(Debug=True))
+    p_off = _make_plugin(_base_info(Debug=False))
+    check("debug on: has -debug",   "-debug" in _parse_args(p_on.RenderArgument()))
+    check("debug off: no -debug",   "-debug" not in _parse_args(p_off.RenderArgument()))
+
+
+def test_metadata_flag():
+    """-metadata path passed when MetadataFile is set."""
+    p    = _make_plugin(_base_info(MetadataFile="C:/out/meta.json"))
+    args = _parse_args(p.RenderArgument())
+    check("has -metadata",        "-metadata" in args)
+    check("metadata value correct", "meta.json" in args.get("-metadata", ""))
+
+
 def test_exr_quality_passed():
     """EXR quality value is forwarded via -quality."""
     p    = _make_plugin(_base_info(Codec="exr", OutputPath="C:/out/f.exr",
@@ -295,6 +360,13 @@ if __name__ == "__main__":
         test_new_optional_flags,
         test_empty_optional_flags_omitted,
         test_image_codec_uses_current_frame_not_stored_range,
+        test_stdout_always_enabled,
+        test_autopreroll_default_enabled,
+        test_autopreroll_can_be_disabled,
+        test_tiled_flags,
+        test_tiled_off_omits_flags,
+        test_debug_flag,
+        test_metadata_flag,
         test_exr_quality_passed,
     ]
 

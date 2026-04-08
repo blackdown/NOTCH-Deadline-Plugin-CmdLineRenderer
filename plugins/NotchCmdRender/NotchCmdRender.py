@@ -369,6 +369,30 @@ class NotchCmdRenderPlugin(DeadlinePlugin):
             opt("GPU", "-gpu", str)
             opt("ColourSpace", "-colourspace", str)
             opt("AOV", "-aov", str)
+            opt("PrerollStart", "-prerollstart", float)
+
+            # Auto pre-roll — default is enabled (1); always pass explicitly
+            auto_preroll = self.GetBooleanPluginInfoEntryWithDefault("AutoPreroll", True)
+            args.extend(["-autopreroll", "1" if auto_preroll else "0"])
+            self.LogInfoWithProgress(f"AutoPreroll: {auto_preroll}")
+
+            # Tiled rendering
+            tiled = self.GetBooleanPluginInfoEntryWithDefault("Tiled", False)
+            if tiled:
+                args.extend(["-tiled", "1"])
+                opt("TileSize", "-tilesize", int)
+                opt("Overscan", "-overscan", int)
+
+            # Metadata export
+            opt("MetadataFile", "-metadata", str)
+
+            # Debug logging
+            debug = self.GetBooleanPluginInfoEntryWithDefault("Debug", False)
+            if debug:
+                args.extend(["-debug", "1"])
+
+            # Always enable stdout logging for headless farm operation
+            args.extend(["-stdout", "1"])
 
             extra = self.GetPluginInfoEntryWithDefault("ExtraArgs", "").strip()
             if extra:
